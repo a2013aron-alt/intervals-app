@@ -6,16 +6,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 120
     steps:
     - uses: actions/checkout@v4
 
-    - name: Clean old broken cache
-      run: rm -rf ~/.buildozer ~/.android
+    - name: Cache Buildozer
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.buildozer
+          .buildozer
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip build-essential git ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good unzip openjdk-17-jdk libtool automake autoconf
+        sudo apt-get install -y \
+          python3-pip build-essential git ffmpeg \
+          libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
+          libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
+          zlib1g-dev libgstreamer1.0 gstreamer1.0-plugins-base \
+          gstreamer1.0-plugins-good unzip openjdk-17-jdk libtool automake autoconf
+        pip install --upgrade pip setuptools wheel
         pip install buildozer cython kivy
 
     - name: Setup Android SDK
@@ -32,7 +46,9 @@ jobs:
         tools/bin/sdkmanager --sdk_root="$SDK" "platform-tools" "build-tools;33.0.0" "platforms;android-33"
 
     - name: Build APK
-      run: buildozer android debug
+      run: |
+        export PATH=$PATH:$HOME/.local/bin
+        buildozer android debug
 
     - name: Upload APK
       if: success()
