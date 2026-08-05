@@ -26,17 +26,23 @@ jobs:
       run: |
         pip install buildozer cython kivy
 
-    - name: Setup Android SDK
+    - name: Setup Android SDK wrapper for buildozer
       run: |
-        SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
-        mkdir -p "$SDK_DIR"
-        cd "$SDK_DIR"
-        wget -q https://dl.google.com/android/repository/commandlinetools-linux-6514223_latest.zip
-        unzip -q commandlinetools-linux-6514223_latest.zip
-        # Принимаем лицензии с явным sdk_root
-        yes | tools/bin/sdkmanager --sdk_root="$SDK_DIR" --licenses || true
+        BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
+        mkdir -p "$BUILDOZER_SDK/tools/bin"
+        
+        # Создаём обёртку, которая вызывает системный sdkmanager с правильным sdk_root
+        cat > "$BUILDOZER_SDK/tools/bin/sdkmanager" << 'EOF'
+#!/bin/bash
+exec /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root="$HOME/.buildozer/android/platform/android-sdk" "$@"
+EOF
+        chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
+        
+        # Принимаем лицензии
+        yes | "$BUILDOZER_SDK/tools/bin/sdkmanager" --licenses || true
+        
         # Ставим нужные пакеты
-        tools/bin/sdkmanager --sdk_root="$SDK_DIR" "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+        "$BUILDOZER_SDK/tools/bin/sdkmanager" "platform-tools" "build-tools;33.0.0" "platforms;android-33"
 
     - name: Build APK
       run: |
