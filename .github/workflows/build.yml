@@ -9,44 +9,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Cache Buildozer
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.buildozer
-          ~/.android
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-
-    - name: Install system dependencies
+    - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip build-essential git ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libgstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good unzip openjdk-17-jdk
-
-    - name: Install Python dependencies
-      run: |
         pip install buildozer cython kivy
 
-    - name: Setup Android SDK wrapper for buildozer
+    - name: Setup Android SDK
       run: |
-        BUILDOZER_SDK="$HOME/.buildozer/android/platform/android-sdk"
-        mkdir -p "$BUILDOZER_SDK/tools/bin"
-        
-        # Создаём обёртку, которая вызывает системный sdkmanager с правильным sdk_root
-        cat > "$BUILDOZER_SDK/tools/bin/sdkmanager" << 'EOF'
-#!/bin/bash
-exec /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root="$HOME/.buildozer/android/platform/android-sdk" "$@"
-EOF
-        chmod +x "$BUILDOZER_SDK/tools/bin/sdkmanager"
-        
-        # Принимаем лицензии
-        yes | "$BUILDOZER_SDK/tools/bin/sdkmanager" --licenses || true
-        
-        # Ставим нужные пакеты
-        "$BUILDOZER_SDK/tools/bin/sdkmanager" "platform-tools" "build-tools;33.0.0" "platforms;android-33"
+        SDK="$HOME/.buildozer/android/platform/android-sdk"
+        mkdir -p "$SDK"
+        cd "$SDK"
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+        unzip -q commandlinetools-linux-9477386_latest.zip
+        mkdir -p tools
+        mv cmdline-tools/* tools/
+        rm -rf cmdline-tools
+        yes | tools/bin/sdkmanager --sdk_root="$SDK" --licenses || true
+        tools/bin/sdkmanager --sdk_root="$SDK" "platform-tools" "build-tools;33.0.0" "platforms;android-33"
 
     - name: Build APK
-      run: |
-        buildozer android debug
+      run: buildozer android debug
 
     - name: Upload APK
       if: success()
