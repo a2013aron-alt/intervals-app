@@ -11,14 +11,12 @@ orientation = portrait
 fullscreen = 0
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
-# === Критично для стабильной сборки ===
+# === Версии, проверенные на стабильность ===
 android.api = 33
 android.minapi = 21
 android.ndk_api = 21
 android.ndk = 25b
-android.sdk = 33
 android.archs = arm64-v8a
-android.allowbackup = True
 
 [buildozer]
 log_level = 2
