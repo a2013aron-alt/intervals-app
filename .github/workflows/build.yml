@@ -69,11 +69,15 @@ jobs:
             rm -f commandlinetools-linux-9477386_latest.zip
           fi
 
+          # Buildozer ищет sdkmanager в tools/bin/sdkmanager — создаём симлинк ВСЕГДА
+          mkdir -p tools/bin
+          ln -sf "$SDK/cmdline-tools/latest/bin/sdkmanager" "$SDK/tools/bin/sdkmanager"
+
           export ANDROID_SDK_ROOT="$SDK"
           # Принимаем ВСЕ лицензии автоматически
-          yes | cmdline-tools/latest/bin/sdkmanager --sdk_root="$SDK" --licenses || true
+          yes | tools/bin/sdkmanager --sdk_root="$SDK" --licenses || true
           # Устанавливаем нужные компоненты
-          cmdline-tools/latest/bin/sdkmanager --sdk_root="$SDK" \
+          tools/bin/sdkmanager --sdk_root="$SDK" \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.0"
